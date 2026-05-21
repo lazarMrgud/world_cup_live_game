@@ -3,54 +3,113 @@ import { gameState } from "./state/gameState.js";
 import { renderTeamSelect } from "./render/renderTeamSelect.js";
 import { createLiveMatch, playMinute } from "./services/liveMatchService.js";
 import { renderLiveMatch } from "./render/renderLiveMatch.js";
+import { createRandomGroups, findTeamGroup } from "./services/groupService.js";
+import { createGroupSchedule } from "./services/scheduleService.js";
 
 const app = document.querySelector("#app");
 const startGameBtn = document.querySelector("#startGameBtn");
 
 let liveTimer = null;
-let selectedTeam = null;
-let opponents = [];
-let opponentIndex = 0;
 
 function startGame() {
-  gameState.playedMatches = [];
-  gameState.currentMatch = null;
-  gameState.selectedTeamId = null;
-
-  selectedTeam = null;
-  opponents = [];
-  opponentIndex = 0;
+  resetGame();
 
   app.innerHTML = renderTeamSelect(teams);
 
   document.querySelectorAll(".team-card").forEach((button) => {
     button.addEventListener("click", () => {
-      gameState.selectedTeamId = button.dataset.teamId;
-
-      selectedTeam = teams.find(
-        (team) => String(team.id) === String(gameState.selectedTeamId)
-      );
-
-      opponents = teams.filter(
-        (team) => String(team.id) !== String(gameState.selectedTeamId)
-      );
-
-      opponentIndex = 0;
-
-      startNextMatch();
+      selectTeam(button.dataset.teamId);
     });
   });
 }
 
-function startNextMatch() {
-  const opponent = opponents[opponentIndex];
+function resetGame() {
+  gameState.selectedTeamId = null;
+  gameState.selectedTeam = null;
+  gameState.groups = {};
+  gameState.selectedGroupName = null;
+  gameState.selectedGroupTeams = [];
+  gameState.schedule = [];
+  gameState.currentMatchIndex = 0;
+  gameState.currentMatch = null;
+  gameState.playedMatches = [];
 
-  if (!opponent) {
-    renderTournamentSummary();
+  if (liveTimer) {
+    clearInterval(liveTimer);
+    liveTimer = null;
+  }
+}
+
+function selectTeam(teamId) {
+  gameState.selectedTeamId = teamId;
+
+  gameState.groups = createRandomGroups(teams);
+
+  const selectedGroup = findTeamGroup(gameState.groups, teamId);
+
+  if (!selectedGroup) {
+    app.innerHTML = "<h2>Greška: izabrani tim nije pronađen u grupi.</h2>";
     return;
   }
 
-  startLiveMatch(selectedTeam, opponent);
+  const [groupName, groupTeams] = selectedGroup;
+
+  gameState.selectedGroupName = groupName;
+  gameState.selectedGroupTeams = groupTeams;
+
+  gameState.selectedTeam = groupTeams.find(
+    (team) => String(team.id) === String(teamId)
+  );
+
+  gameState.schedule = createGroupSchedule(groupName, groupTeams);
+  gameState.currentMatchIndex = 0;
+
+  renderGroupIntro();
+}
+
+function renderGroupIntro() {
+  app.innerHTML = `
+    <section class="group-intro">
+      <h2>Izabrao si: ${gameState.selectedTeam.ime}</h2>
+      <p>Tvoj tim je u grupi: <strong>${gameState.selectedGroupName}</strong></p>
+
+      <div class="group-teams-list">
+        ${gameState.selectedGroupTeams
+          .map(
+            (team) => `
+              <div class="group-team-card ${
+                String(team.id) === String(gameState.selectedTeamId)
+                  ? "selected-group-team"
+                  : ""
+              }">
+                <img src="${team.slika}" alt="${team.ime}">
+                <h3>${team.ime}</h3>
+              </div>
+            `
+          )
+          .join("")}
+      </div>
+
+      <button id="startGroupMatchesBtn" class="next-match-btn">
+        Pokreni utakmice u grupi
+      </button>
+    </section>
+  `;
+
+  document
+    .querySelector("#startGroupMatchesBtn")
+    .addEventListener("click", startNextGroupMatch);
+}
+
+function startNextGroupMatch() {
+  const match = gameState.schedule[gameState.currentMatchIndex];
+
+  if (!match) {
+    renderGroupFinished();
+    return;
+  }
+
+  startLiveMatch(match.homeTeam, match.awayTeam);
 }
 
 function startLiveMatch(homeTeam, awayTeam) {
@@ -75,7 +134,7 @@ function startLiveMatch(homeTeam, awayTeam) {
       savePlayedMatch(gameState.currentMatch);
       renderMatchFinished(gameState.currentMatch);
     }
-  }, 250);
+  }, 100);
 }
 
 function savePlayedMatch(match) {
@@ -85,7 +144,9 @@ function savePlayedMatch(match) {
     homeGoals: match.homeGoals,
     awayGoals: match.awayGoals,
     events: match.events,
-    stats: match.stats
+    stats: match.stats,
+    round: gameState.schedule[gameState.currentMatchIndex].round,
+    group: gameState.selectedGroupName
   });
 }
 
@@ -105,14 +166,14 @@ function renderMatchFinished(match) {
       <p>${getMatchResultMessage(match)}</p>
 
       <button id="nextMatchBtn" class="next-match-btn">
-        Sledeća utakmica
+        Sledeća utakmica u grupi
       </button>
     </section>
   `;
 
   document.querySelector("#nextMatchBtn").addEventListener("click", () => {
-    opponentIndex += 1;
-    startNextMatch();
+    gameState.currentMatchIndex += 1;
+    startNextGroupMatch();
   });
 }
 
@@ -128,19 +189,20 @@ function getMatchResultMessage(match) {
   return "Utakmica je završena nerešeno. Idemo dalje!";
 }
 
-function renderTournamentSummary() {
+function renderGroupFinished() {
   app.innerHTML = `
     <section class="match-finished-box">
-      <h2>Kraj serije utakmica</h2>
-      <p>${selectedTeam.ime} je odigrao sve utakmice.</p>
+      <h2>Kraj utakmica u grupi</h2>
+      <p>Grupa ${gameState.selectedGroupName} je završena.</p>
 
-      <h3>Istorija utakmica</h3>
+      <h3>Odigrane utakmice</h3>
 
       <div class="played-matches-list">
         ${gameState.playedMatches
           .map(
             (match) => `
               <div class="played-match-card">
+                <p><strong>Kolo ${match.round}</strong></p>
                 <strong>
                   ${match.homeTeam.ime}
                   ${match.homeGoals} : ${match.awayGoals}
