@@ -4,9 +4,10 @@ import { renderTeamSelect } from "./render/renderTeamSelect.js";
 import { createLiveMatch, playMinute } from "./services/liveMatchService.js";
 import { renderLiveMatch } from "./render/renderLiveMatch.js";
 import { createRandomGroups, findTeamGroup } from "./services/groupService.js";
-const knockoutTournament = createKnockoutTournamentFromGroups(
-  worldCupGroups.allGroupResults
-);
+import {
+  simulateRestOfWorldCupGroups,
+  createKnockoutTournamentFromGroups
+} from "./services/worldCupService.js";
 import {
   createGroupSchedule,
   getSelectedTeamMatches,
@@ -18,10 +19,7 @@ import {
 } from "./services/tableService.js";
 
 import { renderGroupTable } from "./render/renderGroupTable.js";
-import {
-  simulateRestOfWorldCupGroups,
-  createKnockoutTournamentFromGroups
-} from "./services/worldCupService.js";
+
 
 import { renderWorldCupSummary } from "./render/renderWorldCupSummary.js";
 const app = document.querySelector("#app");
@@ -300,8 +298,8 @@ function continueWorldCupToFinal() {
     gameState.playedMatches
   );
 
-  const knockoutTournament = createKnockoutTournament(
-    worldCupGroups.allQualifiedTeams
+  const knockoutTournament = createKnockoutTournamentFromGroups(
+    worldCupGroups.allGroupResults
   );
 
   function renderSummary(showChampion = false) {
