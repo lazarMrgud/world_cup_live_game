@@ -5,6 +5,12 @@ import { createLiveMatch, playMinute } from "./services/liveMatchService.js";
 import { renderLiveMatch } from "./render/renderLiveMatch.js";
 import { createRandomGroups, findTeamGroup } from "./services/groupService.js";
 import { createGroupSchedule } from "./services/scheduleService.js";
+import {
+  calculateGroupTable,
+  getQualifiedTeamsFromTable
+} from "./services/tableService.js";
+
+import { renderGroupTable } from "./render/renderGroupTable.js";
 
 const app = document.querySelector("#app");
 const startGameBtn = document.querySelector("#startGameBtn");
@@ -190,29 +196,50 @@ function getMatchResultMessage(match) {
 }
 
 function renderGroupFinished() {
+  const groupTable = calculateGroupTable(
+    gameState.selectedGroupTeams,
+    gameState.playedMatches
+  );
+
+  const qualifiedTeams = getQualifiedTeamsFromTable(groupTable);
+
+  const selectedTeamQualified = qualifiedTeams.some(
+    (team) => String(team.id) === String(gameState.selectedTeamId)
+  );
+
   app.innerHTML = `
     <section class="match-finished-box">
       <h2>Kraj utakmica u grupi</h2>
       <p>Grupa ${gameState.selectedGroupName} je završena.</p>
 
-      <h3>Odigrane utakmice</h3>
+      ${renderGroupTable(
+        gameState.selectedGroupName,
+        groupTable,
+        gameState.selectedTeamId
+      )}
 
-      <div class="played-matches-list">
-        ${gameState.playedMatches
+      <h3>Timovi koji idu dalje</h3>
+
+      <div class="qualified-teams-list">
+        ${qualifiedTeams
           .map(
-            (match) => `
-              <div class="played-match-card">
-                <p><strong>Kolo ${match.round}</strong></p>
-                <strong>
-                  ${match.homeTeam.ime}
-                  ${match.homeGoals} : ${match.awayGoals}
-                  ${match.awayTeam.ime}
-                </strong>
+            (team) => `
+              <div class="qualified-team-card">
+                <img src="${team.slika}" alt="${team.ime}">
+                <strong>${team.ime}</strong>
               </div>
             `
           )
           .join("")}
       </div>
+
+      <h3>
+        ${
+          selectedTeamQualified
+            ? `${gameState.selectedTeam.ime} ide u veći rang!`
+            : `${gameState.selectedTeam.ime} je ispao u grupi.`
+        }
+      </h3>
 
       <button id="restartGameBtn" class="next-match-btn">
         Pokreni novi turnir
