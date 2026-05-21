@@ -4,7 +4,11 @@ import {
   getQualifiedTeamsFromTable
 } from "./tableService.js";
 
-export function simulateRestOfWorldCupGroups(groups, selectedGroupName, selectedGroupPlayedMatches) {
+export function simulateRestOfWorldCupGroups(
+  groups,
+  selectedGroupName,
+  selectedGroupPlayedMatches
+) {
   const allGroupResults = {};
   const allQualifiedTeams = [];
 
@@ -46,16 +50,19 @@ export function simulateRestOfWorldCupGroups(groups, selectedGroupName, selected
   };
 }
 
-export function createKnockoutTournament(qualifiedTeams) {
-  const roundOf16 = createKnockoutRound(qualifiedTeams, "Round of 16");
+export function createKnockoutTournamentFromGroups(allGroupResults) {
+  const roundOf16 = createRoundOf16FromGroups(allGroupResults);
+
   const quarterFinal = createKnockoutRound(
     roundOf16.map((match) => match.winner),
     "Quarter final"
   );
+
   const semiFinal = createKnockoutRound(
     quarterFinal.map((match) => match.winner),
     "Semi final"
   );
+
   const final = createKnockoutRound(
     semiFinal.map((match) => match.winner),
     "World Cup Final"
@@ -68,6 +75,31 @@ export function createKnockoutTournament(qualifiedTeams) {
     finalMatch: final[0],
     champion: final[0].winner
   };
+}
+
+function createRoundOf16FromGroups(allGroupResults) {
+  const A = allGroupResults["Group A"].qualifiedTeams;
+  const B = allGroupResults["Group B"].qualifiedTeams;
+  const C = allGroupResults["Group C"].qualifiedTeams;
+  const D = allGroupResults["Group D"].qualifiedTeams;
+  const E = allGroupResults["Group E"].qualifiedTeams;
+  const F = allGroupResults["Group F"].qualifiedTeams;
+  const G = allGroupResults["Group G"].qualifiedTeams;
+  const H = allGroupResults["Group H"].qualifiedTeams;
+
+  return [
+    createKnockoutMatch(A[0], B[1], "Round of 16"),
+    createKnockoutMatch(B[0], A[1], "Round of 16"),
+
+    createKnockoutMatch(C[0], D[1], "Round of 16"),
+    createKnockoutMatch(D[0], C[1], "Round of 16"),
+
+    createKnockoutMatch(E[0], F[1], "Round of 16"),
+    createKnockoutMatch(F[0], E[1], "Round of 16"),
+
+    createKnockoutMatch(G[0], H[1], "Round of 16"),
+    createKnockoutMatch(H[0], G[1], "Round of 16")
+  ];
 }
 
 function createKnockoutRound(teams, roundName) {
