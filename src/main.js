@@ -75,7 +75,7 @@ function startLiveMatch(homeTeam, awayTeam) {
       savePlayedMatch(gameState.currentMatch);
       renderMatchFinished(gameState.currentMatch);
     }
-  }, 700);
+  }, 250);
 }
 
 function savePlayedMatch(match) {
