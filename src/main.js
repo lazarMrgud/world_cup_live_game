@@ -5,10 +5,6 @@ import { createLiveMatch, playMinute } from "./services/liveMatchService.js";
 import { renderLiveMatch } from "./render/renderLiveMatch.js";
 import { createRandomGroups, findTeamGroup } from "./services/groupService.js";
 import {
-  simulateRestOfWorldCupGroups,
-  createKnockoutTournamentFromGroups
-} from "./services/worldCupService.js";
-import {
   createGroupSchedule,
   getSelectedTeamMatches,
   getOtherGroupMatches
@@ -17,25 +13,28 @@ import {
   calculateGroupTable,
   getQualifiedTeamsFromTable
 } from "./services/tableService.js";
-
 import { renderGroupTable } from "./render/renderGroupTable.js";
-
-
+import {
+  simulateRestOfWorldCupGroups,
+  createKnockoutTournamentFromGroups
+} from "./services/worldCupService.js";
 import { renderWorldCupSummary } from "./render/renderWorldCupSummary.js";
+
+const MATCH_SPEED = 180;
+
 const app = document.querySelector("#app");
 const startGameBtn = document.querySelector("#startGameBtn");
 
 let liveTimer = null;
+let cachedWorldCupGroups = null;
+let cachedKnockoutTournament = null;
 
 function startGame() {
   resetGame();
-
   app.innerHTML = renderTeamSelect(teams);
 
   document.querySelectorAll(".team-card").forEach((button) => {
-    button.addEventListener("click", () => {
-      selectTeam(button.dataset.teamId);
-    });
+    button.addEventListener("click", () => selectTeam(button.dataset.teamId));
   });
 }
 
@@ -46,9 +45,14 @@ function resetGame() {
   gameState.selectedGroupName = null;
   gameState.selectedGroupTeams = [];
   gameState.schedule = [];
+  gameState.selectedTeamSchedule = [];
+  gameState.otherGroupSchedule = [];
   gameState.currentMatchIndex = 0;
   gameState.currentMatch = null;
   gameState.playedMatches = [];
+
+  cachedWorldCupGroups = null;
+  cachedKnockoutTournament = null;
 
   if (liveTimer) {
     clearInterval(liveTimer);
@@ -58,13 +62,12 @@ function resetGame() {
 
 function selectTeam(teamId) {
   gameState.selectedTeamId = teamId;
-
   gameState.groups = createRandomGroups(teams);
 
   const selectedGroup = findTeamGroup(gameState.groups, teamId);
 
   if (!selectedGroup) {
-    app.innerHTML = "<h2>Greška: izabrani tim nije pronađen u grupi.</h2>";
+    app.innerHTML = `<h2>Greška: izabrani tim nije pronađen u grupi.</h2>`;
     return;
   }
 
@@ -72,24 +75,23 @@ function selectTeam(teamId) {
 
   gameState.selectedGroupName = groupName;
   gameState.selectedGroupTeams = groupTeams;
-
   gameState.selectedTeam = groupTeams.find(
     (team) => String(team.id) === String(teamId)
   );
 
- gameState.schedule = createGroupSchedule(groupName, groupTeams);
+  gameState.schedule = createGroupSchedule(groupName, groupTeams);
 
-gameState.selectedTeamSchedule = getSelectedTeamMatches(
-  gameState.schedule,
-  gameState.selectedTeamId
-);
+  gameState.selectedTeamSchedule = getSelectedTeamMatches(
+    gameState.schedule,
+    gameState.selectedTeamId
+  );
 
-gameState.otherGroupSchedule = getOtherGroupMatches(
-  gameState.schedule,
-  gameState.selectedTeamId
-);
+  gameState.otherGroupSchedule = getOtherGroupMatches(
+    gameState.schedule,
+    gameState.selectedTeamId
+  );
 
-gameState.currentMatchIndex = 0;
+  gameState.currentMatchIndex = 0;
 
   renderGroupIntro();
 }
@@ -99,6 +101,7 @@ function renderGroupIntro() {
     <section class="group-intro">
       <h2>Izabrao si: ${gameState.selectedTeam.ime}</h2>
       <p>Tvoj tim je u grupi: <strong>${gameState.selectedGroupName}</strong></p>
+      <p>Uživo pratiš samo utakmice svog tima. Ostale utakmice grupe se simuliraju u pozadini.</p>
 
       <div class="group-teams-list">
         ${gameState.selectedGroupTeams
@@ -118,17 +121,17 @@ function renderGroupIntro() {
       </div>
 
       <button id="startGroupMatchesBtn" class="next-match-btn">
-        Pokreni utakmice u grupi
+        Pokreni utakmice mog tima
       </button>
     </section>
   `;
 
   document
     .querySelector("#startGroupMatchesBtn")
-    .addEventListener("click", startNextGroupMatch);
+    .addEventListener("click", startNextSelectedTeamMatch);
 }
 
-function startNextGroupMatch() {
+function startNextSelectedTeamMatch() {
   const match = gameState.selectedTeamSchedule[gameState.currentMatchIndex];
 
   if (!match) {
@@ -137,8 +140,9 @@ function startNextGroupMatch() {
     return;
   }
 
-  startLiveMatch(match.homeTeam, match.awayTeam);
+  startLiveMatch(match.homeTeam, match.awayTeam, handleGroupMatchFinished);
 }
+
 function simulateOtherGroupMatches() {
   const alreadySimulated = gameState.playedMatches.some(
     (match) => match.isBackgroundSimulation
@@ -146,32 +150,21 @@ function simulateOtherGroupMatches() {
 
   if (alreadySimulated) return;
 
-  const simulatedMatches = gameState.otherGroupSchedule.map((match) => {
-    return {
-      ...match,
-      homeGoals: getRandomGoals(),
-      awayGoals: getRandomGoals(),
-      events: [],
-      stats: null,
-      round: match.round,
-      group: match.group,
-      isBackgroundSimulation: true
-    };
-  });
+  const simulatedMatches = gameState.otherGroupSchedule.map((match) => ({
+    ...match,
+    homeGoals: getRandomGoals(),
+    awayGoals: getRandomGoals(),
+    events: [],
+    stats: null,
+    round: match.round,
+    group: match.group,
+    isBackgroundSimulation: true
+  }));
 
   gameState.playedMatches.push(...simulatedMatches);
 }
-const alreadySimulated = gameState.playedMatches.some(
-  (match) => match.isBackgroundSimulation
-);
 
-if (alreadySimulated) return;
-
-function getRandomGoals() {
-  return Math.floor(Math.random() * 5);
-}
-
-function startLiveMatch(homeTeam, awayTeam) {
+function startLiveMatch(homeTeam, awayTeam, onFinished) {
   if (liveTimer) {
     clearInterval(liveTimer);
   }
@@ -189,14 +182,19 @@ function startLiveMatch(homeTeam, awayTeam) {
     if (gameState.currentMatch.isFinished) {
       clearInterval(liveTimer);
       liveTimer = null;
-
-      savePlayedMatch(gameState.currentMatch);
-      renderMatchFinished(gameState.currentMatch);
+      onFinished(gameState.currentMatch);
     }
-  }, 100);
+  }, MATCH_SPEED);
+}
+
+function handleGroupMatchFinished(match) {
+  savePlayedMatch(match);
+  renderGroupMatchFinished(match);
 }
 
 function savePlayedMatch(match) {
+  const scheduleMatch = gameState.selectedTeamSchedule[gameState.currentMatchIndex];
+
   gameState.playedMatches.push({
     homeTeam: match.homeTeam,
     awayTeam: match.awayTeam,
@@ -204,35 +202,30 @@ function savePlayedMatch(match) {
     awayGoals: match.awayGoals,
     events: match.events,
     stats: match.stats,
-   round: gameState.selectedTeamSchedule[gameState.currentMatchIndex].round,
-    group: gameState.selectedGroupName
+    round: scheduleMatch.round,
+    group: gameState.selectedGroupName,
+    isBackgroundSimulation: false
   });
 }
 
-function renderMatchFinished(match) {
+function renderGroupMatchFinished(match) {
   app.innerHTML = `
     ${renderLiveMatch(match, gameState.selectedTeamId)}
 
     <section class="match-finished-box">
       <h2>Kraj utakmice</h2>
-
-      <h3>
-        ${match.homeTeam.ime}
-        ${match.homeGoals} : ${match.awayGoals}
-        ${match.awayTeam.ime}
-      </h3>
-
+      <h3>${match.homeTeam.ime} ${match.homeGoals} : ${match.awayGoals} ${match.awayTeam.ime}</h3>
       <p>${getMatchResultMessage(match)}</p>
 
       <button id="nextMatchBtn" class="next-match-btn">
-        Sledeća utakmica u grupi
+        Sledeća utakmica mog tima
       </button>
     </section>
   `;
 
   document.querySelector("#nextMatchBtn").addEventListener("click", () => {
     gameState.currentMatchIndex += 1;
-    startNextGroupMatch();
+    startNextSelectedTeamMatch();
   });
 }
 
@@ -306,99 +299,81 @@ function renderGroupFinished() {
 }
 
 function continueWorldCupToFinal() {
-  const worldCupGroups = simulateRestOfWorldCupGroups(
+  cachedWorldCupGroups = simulateRestOfWorldCupGroups(
     gameState.groups,
     gameState.selectedGroupName,
     gameState.playedMatches
   );
 
-  const knockoutTournament = createKnockoutTournamentFromGroups(
-    worldCupGroups.allGroupResults
+  cachedKnockoutTournament = createKnockoutTournamentFromGroups(
+    cachedWorldCupGroups.allGroupResults
   );
 
-  function renderSummary(showChampion = false) {
-    app.innerHTML = renderWorldCupSummary({
-      allGroupResults: worldCupGroups.allGroupResults,
-      knockoutTournament,
-      selectedTeamId: gameState.selectedTeamId,
-      showChampion
+  renderWorldCupSummaryScreen(false);
+}
+
+function renderWorldCupSummaryScreen(showChampion = false) {
+  app.innerHTML = renderWorldCupSummary({
+    allGroupResults: cachedWorldCupGroups.allGroupResults,
+    knockoutTournament: cachedKnockoutTournament,
+    selectedTeamId: gameState.selectedTeamId,
+    showChampion
+  });
+
+  document.querySelector("#restartGameBtn").addEventListener("click", startGame);
+
+  const watchFinalBtn = document.querySelector("#watchFinalBtn");
+  const showChampionBtn = document.querySelector("#showChampionBtn");
+
+  if (watchFinalBtn) {
+    watchFinalBtn.addEventListener("click", () => {
+      startLiveFinalMatch(cachedKnockoutTournament.finalMatch);
     });
-
-    document
-      .querySelector("#restartGameBtn")
-      .addEventListener("click", startGame);
-
-    const watchFinalBtn = document.querySelector("#watchFinalBtn");
-    const showChampionBtn = document.querySelector("#showChampionBtn");
-
-    if (watchFinalBtn) {
-      watchFinalBtn.addEventListener("click", () => {
-        const finalMatch = knockoutTournament.finalMatch;
-        startLiveFinalMatch(finalMatch, knockoutTournament.champion);
-      });
-    }
-
-    if (showChampionBtn) {
-      showChampionBtn.addEventListener("click", () => {
-        renderSummary(true);
-      });
-    }
   }
 
-  renderSummary(false);
-}
-
-
-function startLiveFinalMatch(finalMatch, champion) {
-  if (liveTimer) {
-    clearInterval(liveTimer);
+  if (showChampionBtn) {
+    showChampionBtn.addEventListener("click", () => {
+      renderWorldCupSummaryScreen(true);
+    });
   }
-
-  gameState.currentMatch = createLiveMatch(
-    finalMatch.homeTeam,
-    finalMatch.awayTeam
-  );
-
-  liveTimer = setInterval(() => {
-    playMinute(gameState.currentMatch);
-
-    app.innerHTML = renderLiveMatch(
-      gameState.currentMatch,
-      gameState.selectedTeamId
-    );
-
-    if (gameState.currentMatch.isFinished) {
-      clearInterval(liveTimer);
-      liveTimer = null;
-
-      app.innerHTML = `
-        ${renderLiveMatch(gameState.currentMatch, gameState.selectedTeamId)}
-
-        <section class="world-champion-box">
-          <h2>Finale je završeno</h2>
-          <h3>
-            ${gameState.currentMatch.homeTeam.ime}
-            ${gameState.currentMatch.homeGoals} :
-            ${gameState.currentMatch.awayGoals}
-            ${gameState.currentMatch.awayTeam.ime}
-          </h3>
-
-          <h2>Šampion sveta</h2>
-          <img src="${champion.slika}" alt="${champion.ime}">
-          <h1>${champion.ime}</h1>
-
-          <button id="restartGameBtn" class="next-match-btn">
-            Vrati na početak / biraj ponovo svoj tim
-          </button>
-        </section>
-      `;
-
-      document
-        .querySelector("#restartGameBtn")
-        .addEventListener("click", startGame);
-    }
-  }, 250);
 }
 
+function startLiveFinalMatch(finalMatch) {
+  startLiveMatch(finalMatch.homeTeam, finalMatch.awayTeam, handleFinalFinished);
+}
+
+function handleFinalFinished(match) {
+  const champion = getLiveMatchWinner(match);
+
+  app.innerHTML = `
+    ${renderLiveMatch(match, gameState.selectedTeamId)}
+
+    <section class="world-champion-box">
+      <h2>Finale je završeno</h2>
+      <h3>${match.homeTeam.ime} ${match.homeGoals} : ${match.awayGoals} ${match.awayTeam.ime}</h3>
+
+      <h2>Šampion sveta</h2>
+      <img src="${champion.slika}" alt="${champion.ime}">
+      <h1>${champion.ime}</h1>
+
+      <button id="restartGameBtn" class="next-match-btn">
+        Vrati na početak / biraj ponovo svoj tim
+      </button>
+    </section>
+  `;
+
+  document.querySelector("#restartGameBtn").addEventListener("click", startGame);
+}
+
+function getLiveMatchWinner(match) {
+  if (match.homeGoals > match.awayGoals) return match.homeTeam;
+  if (match.awayGoals > match.homeGoals) return match.awayTeam;
+
+  return Math.random() > 0.5 ? match.homeTeam : match.awayTeam;
+}
+
+function getRandomGoals() {
+  return Math.floor(Math.random() * 5);
+}
 
 startGameBtn.addEventListener("click", startGame);
