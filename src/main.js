@@ -4,7 +4,11 @@ import { renderTeamSelect } from "./render/renderTeamSelect.js";
 import { createLiveMatch, playMinute } from "./services/liveMatchService.js";
 import { renderLiveMatch } from "./render/renderLiveMatch.js";
 import { createRandomGroups, findTeamGroup } from "./services/groupService.js";
-import { createGroupSchedule } from "./services/scheduleService.js";
+import {
+  createGroupSchedule,
+  getSelectedTeamMatches,
+  getOtherGroupMatches
+} from "./services/scheduleService.js";
 import {
   calculateGroupTable,
   getQualifiedTeamsFromTable
@@ -72,8 +76,19 @@ function selectTeam(teamId) {
     (team) => String(team.id) === String(teamId)
   );
 
-  gameState.schedule = createGroupSchedule(groupName, groupTeams);
-  gameState.currentMatchIndex = 0;
+ gameState.schedule = createGroupSchedule(groupName, groupTeams);
+
+gameState.selectedTeamSchedule = getSelectedTeamMatches(
+  gameState.schedule,
+  gameState.selectedTeamId
+);
+
+gameState.otherGroupSchedule = getOtherGroupMatches(
+  gameState.schedule,
+  gameState.selectedTeamId
+);
+
+gameState.currentMatchIndex = 0;
 
   renderGroupIntro();
 }
@@ -113,14 +128,32 @@ function renderGroupIntro() {
 }
 
 function startNextGroupMatch() {
-  const match = gameState.schedule[gameState.currentMatchIndex];
+  const match = gameState.selectedTeamSchedule[gameState.currentMatchIndex];
 
   if (!match) {
+    simulateOtherGroupMatches();
     renderGroupFinished();
     return;
   }
 
   startLiveMatch(match.homeTeam, match.awayTeam);
+}
+function simulateOtherGroupMatches() {
+  const simulatedMatches = gameState.otherGroupSchedule.map((match) => {
+    return {
+      ...match,
+      homeGoals: getRandomGoals(),
+      awayGoals: getRandomGoals(),
+      events: [],
+      stats: null
+    };
+  });
+
+  gameState.playedMatches.push(...simulatedMatches);
+}
+
+function getRandomGoals() {
+  return Math.floor(Math.random() * 5);
 }
 
 function startLiveMatch(homeTeam, awayTeam) {
@@ -156,7 +189,7 @@ function savePlayedMatch(match) {
     awayGoals: match.awayGoals,
     events: match.events,
     stats: match.stats,
-    round: gameState.schedule[gameState.currentMatchIndex].round,
+   round: gameState.selectedTeamSchedule[gameState.currentMatchIndex].round,
     group: gameState.selectedGroupName
   });
 }

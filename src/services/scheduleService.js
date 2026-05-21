@@ -44,3 +44,20 @@ export function createGroupSchedule(groupName, teams) {
     }
   ];
 }
+export function getSelectedTeamMatches(schedule, selectedTeamId) {
+  return schedule.filter((match) => {
+    return (
+      String(match.homeTeam.id) === String(selectedTeamId) ||
+      String(match.awayTeam.id) === String(selectedTeamId)
+    );
+  });
+}
+
+export function getOtherGroupMatches(schedule, selectedTeamId) {
+  return schedule.filter((match) => {
+    return (
+      String(match.homeTeam.id) !== String(selectedTeamId) &&
+      String(match.awayTeam.id) !== String(selectedTeamId)
+    );
+  });
+}
