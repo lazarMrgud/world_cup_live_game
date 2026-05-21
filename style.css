@@ -257,3 +257,55 @@ body {
 .next-match-btn:hover {
   background: #a80000;
 }
+.match-finished-box {
+  max-width: 850px;
+  margin: 30px auto;
+  background: white;
+  border: 2px solid #d60000;
+  border-radius: 14px;
+  padding: 25px;
+  text-align: center;
+}
+
+.match-finished-box h2 {
+  font-size: 32px;
+  margin-bottom: 15px;
+}
+
+.match-finished-box h3 {
+  font-size: 26px;
+  margin-bottom: 15px;
+}
+
+.match-finished-box p {
+  font-size: 20px;
+  margin-bottom: 20px;
+}
+
+.next-match-btn {
+  background: #d60000;
+  color: white;
+  border: none;
+  padding: 14px 28px;
+  font-size: 18px;
+  font-weight: bold;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.next-match-btn:hover {
+  background: #a80000;
+}
+
+.played-matches-list {
+  display: grid;
+  gap: 12px;
+  margin: 20px 0;
+}
+
+.played-match-card {
+  background: #f5f5f5;
+  padding: 14px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+}

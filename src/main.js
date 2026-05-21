@@ -13,6 +13,14 @@ let opponents = [];
 let opponentIndex = 0;
 
 function startGame() {
+  gameState.playedMatches = [];
+  gameState.currentMatch = null;
+  gameState.selectedTeamId = null;
+
+  selectedTeam = null;
+  opponents = [];
+  opponentIndex = 0;
+
   app.innerHTML = renderTeamSelect(teams);
 
   document.querySelectorAll(".team-card").forEach((button) => {
@@ -38,7 +46,7 @@ function startNextMatch() {
   const opponent = opponents[opponentIndex];
 
   if (!opponent) {
-    renderEndOfTournament();
+    renderTournamentSummary();
     return;
   }
 
@@ -64,9 +72,21 @@ function startLiveMatch(homeTeam, awayTeam) {
       clearInterval(liveTimer);
       liveTimer = null;
 
+      savePlayedMatch(gameState.currentMatch);
       renderMatchFinished(gameState.currentMatch);
     }
-  }, 350);
+  }, 700);
+}
+
+function savePlayedMatch(match) {
+  gameState.playedMatches.push({
+    homeTeam: match.homeTeam,
+    awayTeam: match.awayTeam,
+    homeGoals: match.homeGoals,
+    awayGoals: match.awayGoals,
+    events: match.events,
+    stats: match.stats
+  });
 }
 
 function renderMatchFinished(match) {
@@ -108,14 +128,32 @@ function getMatchResultMessage(match) {
   return "Utakmica je završena nerešeno. Idemo dalje!";
 }
 
-function renderEndOfTournament() {
+function renderTournamentSummary() {
   app.innerHTML = `
     <section class="match-finished-box">
       <h2>Kraj serije utakmica</h2>
       <p>${selectedTeam.ime} je odigrao sve utakmice.</p>
 
+      <h3>Istorija utakmica</h3>
+
+      <div class="played-matches-list">
+        ${gameState.playedMatches
+          .map(
+            (match) => `
+              <div class="played-match-card">
+                <strong>
+                  ${match.homeTeam.ime}
+                  ${match.homeGoals} : ${match.awayGoals}
+                  ${match.awayTeam.ime}
+                </strong>
+              </div>
+            `
+          )
+          .join("")}
+      </div>
+
       <button id="restartGameBtn" class="next-match-btn">
-        Pokreni ponovo
+        Pokreni novi turnir
       </button>
     </section>
   `;
