@@ -69,17 +69,17 @@ export function playMinute(match) {
 }
 
 function moveBall(match) {
-  const xMovement = getRandomNumber(-12, 12);
-  const yMovement = getRandomNumber(-18, 18);
+  const xMovement = getRandomNumber(-6, 6);
+  const yMovement = getRandomNumber(-8, 8);
 
   match.ballPosition += xMovement;
   match.ballY += yMovement;
 
-  if (match.ballPosition < 5) match.ballPosition = 5;
-  if (match.ballPosition > 95) match.ballPosition = 95;
+  if (match.ballPosition < 8) match.ballPosition = 8;
+  if (match.ballPosition > 92) match.ballPosition = 92;
 
-  if (match.ballY < 15) match.ballY = 15;
-  if (match.ballY > 85) match.ballY = 85;
+  if (match.ballY < 18) match.ballY = 18;
+  if (match.ballY > 82) match.ballY = 82;
 }
 
 function getRandomSide() {
@@ -115,14 +115,14 @@ function createShot(match) {
 
   if (isGoal && isOnTarget) {
     if (side === "home") {
-      match.homeGoals += 1;
-      match.ballPosition = 96;
-      match.ballY = 50;
-    } else {
-      match.awayGoals += 1;
-      match.ballPosition = 4;
-      match.ballY = 50;
-    }
+  match.homeGoals += 1;
+  match.ballPosition = 94;
+  match.ballY = 50;
+} else {
+  match.awayGoals += 1;
+  match.ballPosition = 6;
+  match.ballY = 50;
+}
 
     match.goalMessage = `GOOOL! ${team.ime} je postigao gol! Idemo dalje!`;
     addEvent(match, "goal", match.goalMessage);

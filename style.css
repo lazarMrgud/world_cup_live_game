@@ -139,10 +139,13 @@ body {
 
 .ball {
   position: absolute;
-  top: 110px;
-  transform: translateX(-50%);
+  transform: translate(-50%, -50%);
   font-size: 34px;
-  transition: left 0.35s ease;
+  transition:
+    left 0.9s cubic-bezier(0.22, 1, 0.36, 1),
+    top 0.9s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.4s ease;
+  will-change: left, top, transform;
 }
 
 .match-info-layout {
