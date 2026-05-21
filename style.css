@@ -396,3 +396,88 @@ body {
   display: block;
   margin: 0 auto 10px;
 }
+
+.world-cup-summary {
+  max-width: 1100px;
+  margin: 30px auto;
+  background: white;
+  border-radius: 14px;
+  padding: 30px;
+}
+
+.selected-status {
+  padding: 18px;
+  border-radius: 10px;
+  font-size: 22px;
+  font-weight: bold;
+  margin-bottom: 25px;
+  text-align: center;
+}
+
+.selected-status.success {
+  background: #e0ffe6;
+  color: #087c35;
+}
+
+.selected-status.fail {
+  background: #ffe2e2;
+  color: #b00000;
+}
+
+.qualified-structure {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+  margin: 20px 0 35px;
+}
+
+.qualified-group-card {
+  background: #f7f7f7;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 15px;
+}
+
+.qualified-small-team {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 8px 0;
+}
+
+.qualified-small-team img {
+  width: 32px;
+}
+
+.knockout-round-list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  margin: 15px 0 30px;
+}
+
+.knockout-card {
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 15px;
+}
+
+.selected-knockout-card {
+  border: 3px solid gold;
+  background: #fff7d1;
+}
+
+.world-champion-box {
+  text-align: center;
+  background: #202020;
+  color: white;
+  border-radius: 14px;
+  padding: 30px;
+  margin: 30px 0;
+}
+
+.world-champion-box img {
+  width: 100px;
+  margin-bottom: 15px;
+}

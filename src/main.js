@@ -11,7 +11,12 @@ import {
 } from "./services/tableService.js";
 
 import { renderGroupTable } from "./render/renderGroupTable.js";
+import {
+  simulateRestOfWorldCupGroups,
+  createKnockoutTournament
+} from "./services/worldCupService.js";
 
+import { renderWorldCupSummary } from "./render/renderWorldCupSummary.js";
 const app = document.querySelector("#app");
 const startGameBtn = document.querySelector("#startGameBtn");
 
@@ -218,7 +223,7 @@ function renderGroupFinished() {
         gameState.selectedTeamId
       )}
 
-      <h3>Timovi koji idu dalje</h3>
+      <h3>Timovi koji idu dalje iz tvoje grupe</h3>
 
       <div class="qualified-teams-list">
         ${qualifiedTeams
@@ -241,13 +246,41 @@ function renderGroupFinished() {
         }
       </h3>
 
-      <button id="restartGameBtn" class="next-match-btn">
-        Pokreni novi turnir
+      <button id="continueWorldCupBtn" class="next-match-btn">
+        Nastavi Svetsko prvenstvo
       </button>
     </section>
   `;
 
+  document
+    .querySelector("#continueWorldCupBtn")
+    .addEventListener("click", continueWorldCupToFinal);
+}
+
+function continueWorldCupToFinal() {
+  const worldCupGroups = simulateRestOfWorldCupGroups(
+    gameState.groups,
+    gameState.selectedGroupName,
+    gameState.playedMatches
+  );
+
+  const knockoutTournament = createKnockoutTournament(
+    worldCupGroups.allQualifiedTeams
+  );
+
+  app.innerHTML = renderWorldCupSummary({
+    allGroupResults: worldCupGroups.allGroupResults,
+    knockoutTournament,
+    selectedTeamId: gameState.selectedTeamId
+  });
+
   document.querySelector("#restartGameBtn").addEventListener("click", startGame);
+
+  document.querySelector("#watchFinalBtn").addEventListener("click", () => {
+    const finalMatch = knockoutTournament.finalMatch;
+
+    startLiveMatch(finalMatch.homeTeam, finalMatch.awayTeam);
+  });
 }
 
 startGameBtn.addEventListener("click", startGame);
