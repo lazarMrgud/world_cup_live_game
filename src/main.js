@@ -268,19 +268,89 @@ function continueWorldCupToFinal() {
     worldCupGroups.allQualifiedTeams
   );
 
-  app.innerHTML = renderWorldCupSummary({
-    allGroupResults: worldCupGroups.allGroupResults,
-    knockoutTournament,
-    selectedTeamId: gameState.selectedTeamId
-  });
+  function renderSummary(showChampion = false) {
+    app.innerHTML = renderWorldCupSummary({
+      allGroupResults: worldCupGroups.allGroupResults,
+      knockoutTournament,
+      selectedTeamId: gameState.selectedTeamId,
+      showChampion
+    });
 
-  document.querySelector("#restartGameBtn").addEventListener("click", startGame);
+    document
+      .querySelector("#restartGameBtn")
+      .addEventListener("click", startGame);
 
-  document.querySelector("#watchFinalBtn").addEventListener("click", () => {
-    const finalMatch = knockoutTournament.finalMatch;
+    const watchFinalBtn = document.querySelector("#watchFinalBtn");
+    const showChampionBtn = document.querySelector("#showChampionBtn");
 
-    startLiveMatch(finalMatch.homeTeam, finalMatch.awayTeam);
-  });
+    if (watchFinalBtn) {
+      watchFinalBtn.addEventListener("click", () => {
+        const finalMatch = knockoutTournament.finalMatch;
+        startLiveFinalMatch(finalMatch, knockoutTournament.champion);
+      });
+    }
+
+    if (showChampionBtn) {
+      showChampionBtn.addEventListener("click", () => {
+        renderSummary(true);
+      });
+    }
+  }
+
+  renderSummary(false);
 }
+
+
+function startLiveFinalMatch(finalMatch, champion) {
+  if (liveTimer) {
+    clearInterval(liveTimer);
+  }
+
+  gameState.currentMatch = createLiveMatch(
+    finalMatch.homeTeam,
+    finalMatch.awayTeam
+  );
+
+  liveTimer = setInterval(() => {
+    playMinute(gameState.currentMatch);
+
+    app.innerHTML = renderLiveMatch(
+      gameState.currentMatch,
+      gameState.selectedTeamId
+    );
+
+    if (gameState.currentMatch.isFinished) {
+      clearInterval(liveTimer);
+      liveTimer = null;
+
+      app.innerHTML = `
+        ${renderLiveMatch(gameState.currentMatch, gameState.selectedTeamId)}
+
+        <section class="world-champion-box">
+          <h2>Finale je završeno</h2>
+          <h3>
+            ${gameState.currentMatch.homeTeam.ime}
+            ${gameState.currentMatch.homeGoals} :
+            ${gameState.currentMatch.awayGoals}
+            ${gameState.currentMatch.awayTeam.ime}
+          </h3>
+
+          <h2>Šampion sveta</h2>
+          <img src="${champion.slika}" alt="${champion.ime}">
+          <h1>${champion.ime}</h1>
+
+          <button id="restartGameBtn" class="next-match-btn">
+            Vrati na početak / biraj ponovo svoj tim
+          </button>
+        </section>
+      `;
+
+      document
+        .querySelector("#restartGameBtn")
+        .addEventListener("click", startGame);
+    }
+  }, 250);
+}
+
 
 startGameBtn.addEventListener("click", startGame);

@@ -6,9 +6,12 @@ export function renderTeamSelect(teams) {
       ${teams
         .map(
           (team) => `
-            <button class="team-card" data-team-id="${team.id}">
+            <button 
+              class="team-card" 
+              data-team-id="${team.id}" 
+              title="${team.ime}"
+            >
               <img src="${team.slika}" alt="${team.ime}">
-              <h3>${team.ime}</h3>
             </button>
           `
         )

@@ -484,3 +484,26 @@ body {
   width: 100px;
   margin-bottom: 15px;
 }
+.all-groups-box {
+  margin: 30px 0;
+}
+
+.all-groups-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 25px;
+}
+
+.final-choice-box {
+  background: #f7f7f7;
+  border: 2px solid #202020;
+  border-radius: 14px;
+  padding: 25px;
+  margin: 30px 0;
+  text-align: center;
+}
+
+.secondary-btn {
+  background: #202020;
+  margin-left: 10px;
+}
