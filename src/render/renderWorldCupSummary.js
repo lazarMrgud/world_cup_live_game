@@ -33,7 +33,7 @@ export function renderWorldCupSummary({
 
       <section class="final-choice-box">
         <h2>Finale Svetskog prvenstva</h2>
-        ${renderFinalPreview(knockoutTournament.finalMatch, selectedTeamId)}
+        ${renderFinalPreview(knockoutTournament.finalMatch, selectedTeamId, showChampion)}
 
         ${
           showChampion
@@ -122,10 +122,47 @@ function renderKnockoutRound(matches, selectedTeamId) {
   `;
 }
 
-function renderFinalPreview(match, selectedTeamId) {
+function renderFinalPreview(match, selectedTeamId, showChampion) {
   return `
     <div class="knockout-round-list">
-      ${renderKnockoutMatch(match, selectedTeamId)}
+      ${renderFinalMatch(match, selectedTeamId, showChampion)}
+    </div>
+  `;
+}
+function renderFinalMatch(match, selectedTeamId, showChampion) {
+  const selectedMatch =
+    String(match.homeTeam.id) === String(selectedTeamId) ||
+    String(match.awayTeam.id) === String(selectedTeamId);
+
+  if (!showChampion) {
+    return `
+      <div class="knockout-card ${selectedMatch ? "selected-knockout-card" : ""}">
+        <strong>World Cup Final</strong>
+        <p>
+          ${match.homeTeam.ime}
+          vs
+          ${match.awayTeam.ime}
+        </p>
+        <p>Finale još nije odigrano.</p>
+      </div>
+    `;
+  }
+
+  const penalties =
+    match.homePenalties !== null
+      ? `<p>Penali: ${match.homePenalties} - ${match.awayPenalties}</p>`
+      : "";
+
+  return `
+    <div class="knockout-card ${selectedMatch ? "selected-knockout-card" : ""}">
+      <strong>${match.round}</strong>
+      <p>
+        ${match.homeTeam.ime}
+        ${match.homeGoals} : ${match.awayGoals}
+        ${match.awayTeam.ime}
+      </p>
+      ${penalties}
+      <p>Pobednik: <strong>${match.winner.ime}</strong></p>
     </div>
   `;
 }
