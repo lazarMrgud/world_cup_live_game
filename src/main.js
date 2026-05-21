@@ -140,18 +140,32 @@ function startNextGroupMatch() {
   startLiveMatch(match.homeTeam, match.awayTeam);
 }
 function simulateOtherGroupMatches() {
+  const alreadySimulated = gameState.playedMatches.some(
+    (match) => match.isBackgroundSimulation
+  );
+
+  if (alreadySimulated) return;
+
   const simulatedMatches = gameState.otherGroupSchedule.map((match) => {
     return {
       ...match,
       homeGoals: getRandomGoals(),
       awayGoals: getRandomGoals(),
       events: [],
-      stats: null
+      stats: null,
+      round: match.round,
+      group: match.group,
+      isBackgroundSimulation: true
     };
   });
 
   gameState.playedMatches.push(...simulatedMatches);
 }
+const alreadySimulated = gameState.playedMatches.some(
+  (match) => match.isBackgroundSimulation
+);
+
+if (alreadySimulated) return;
 
 function getRandomGoals() {
   return Math.floor(Math.random() * 5);
