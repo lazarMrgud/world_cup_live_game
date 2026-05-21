@@ -53,6 +53,10 @@ export function simulateRestOfWorldCupGroups(
 export function createKnockoutTournamentFromGroups(allGroupResults) {
   const roundOf16 = createRoundOf16FromGroups(allGroupResults);
 
+  if (roundOf16.length !== 8) {
+    throw new Error("Round of 16 nije pravilno napravljen.");
+  }
+
   const quarterFinal = createKnockoutRound(
     roundOf16.map((match) => match.winner),
     "Quarter final"
@@ -78,27 +82,47 @@ export function createKnockoutTournamentFromGroups(allGroupResults) {
 }
 
 function createRoundOf16FromGroups(allGroupResults) {
-  const A = allGroupResults["Group A"].qualifiedTeams;
-  const B = allGroupResults["Group B"].qualifiedTeams;
-  const C = allGroupResults["Group C"].qualifiedTeams;
-  const D = allGroupResults["Group D"].qualifiedTeams;
-  const E = allGroupResults["Group E"].qualifiedTeams;
-  const F = allGroupResults["Group F"].qualifiedTeams;
-  const G = allGroupResults["Group G"].qualifiedTeams;
-  const H = allGroupResults["Group H"].qualifiedTeams;
+  const groupA = allGroupResults["Group A"]?.qualifiedTeams || [];
+  const groupB = allGroupResults["Group B"]?.qualifiedTeams || [];
+  const groupC = allGroupResults["Group C"]?.qualifiedTeams || [];
+  const groupD = allGroupResults["Group D"]?.qualifiedTeams || [];
+  const groupE = allGroupResults["Group E"]?.qualifiedTeams || [];
+  const groupF = allGroupResults["Group F"]?.qualifiedTeams || [];
+  const groupG = allGroupResults["Group G"]?.qualifiedTeams || [];
+  const groupH = allGroupResults["Group H"]?.qualifiedTeams || [];
+
+  const requiredGroups = [
+    groupA,
+    groupB,
+    groupC,
+    groupD,
+    groupE,
+    groupF,
+    groupG,
+    groupH
+  ];
+
+  const allGroupsAreReady = requiredGroups.every(
+    (group) => group.length >= 2
+  );
+
+  if (!allGroupsAreReady) {
+    console.error("Nisu sve grupe spremne za Round of 16.", allGroupResults);
+    return [];
+  }
 
   return [
-    createKnockoutMatch(A[0], B[1], "Round of 16"),
-    createKnockoutMatch(B[0], A[1], "Round of 16"),
+    createKnockoutMatch(groupA[0], groupB[1], "Round of 16"),
+    createKnockoutMatch(groupB[0], groupA[1], "Round of 16"),
 
-    createKnockoutMatch(C[0], D[1], "Round of 16"),
-    createKnockoutMatch(D[0], C[1], "Round of 16"),
+    createKnockoutMatch(groupC[0], groupD[1], "Round of 16"),
+    createKnockoutMatch(groupD[0], groupC[1], "Round of 16"),
 
-    createKnockoutMatch(E[0], F[1], "Round of 16"),
-    createKnockoutMatch(F[0], E[1], "Round of 16"),
+    createKnockoutMatch(groupE[0], groupF[1], "Round of 16"),
+    createKnockoutMatch(groupF[0], groupE[1], "Round of 16"),
 
-    createKnockoutMatch(G[0], H[1], "Round of 16"),
-    createKnockoutMatch(H[0], G[1], "Round of 16")
+    createKnockoutMatch(groupG[0], groupH[1], "Round of 16"),
+    createKnockoutMatch(groupH[0], groupG[1], "Round of 16")
   ];
 }
 
