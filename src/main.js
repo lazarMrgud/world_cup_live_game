@@ -8,6 +8,9 @@ const app = document.querySelector("#app");
 const startGameBtn = document.querySelector("#startGameBtn");
 
 let liveTimer = null;
+let selectedTeam = null;
+let opponents = [];
+let opponentIndex = 0;
 
 function startGame() {
   app.innerHTML = renderTeamSelect(teams);
@@ -16,17 +19,30 @@ function startGame() {
     button.addEventListener("click", () => {
       gameState.selectedTeamId = button.dataset.teamId;
 
-      const selectedTeam = teams.find(
+      selectedTeam = teams.find(
         (team) => String(team.id) === String(gameState.selectedTeamId)
       );
 
-      const opponent = teams.find(
+      opponents = teams.filter(
         (team) => String(team.id) !== String(gameState.selectedTeamId)
       );
 
-      startLiveMatch(selectedTeam, opponent);
+      opponentIndex = 0;
+
+      startNextMatch();
     });
   });
+}
+
+function startNextMatch() {
+  const opponent = opponents[opponentIndex];
+
+  if (!opponent) {
+    renderEndOfTournament();
+    return;
+  }
+
+  startLiveMatch(selectedTeam, opponent);
 }
 
 function startLiveMatch(homeTeam, awayTeam) {
@@ -47,8 +63,64 @@ function startLiveMatch(homeTeam, awayTeam) {
     if (gameState.currentMatch.isFinished) {
       clearInterval(liveTimer);
       liveTimer = null;
+
+      renderMatchFinished(gameState.currentMatch);
     }
   }, 350);
+}
+
+function renderMatchFinished(match) {
+  app.innerHTML = `
+    ${renderLiveMatch(match, gameState.selectedTeamId)}
+
+    <section class="match-finished-box">
+      <h2>Kraj utakmice</h2>
+
+      <h3>
+        ${match.homeTeam.ime}
+        ${match.homeGoals} : ${match.awayGoals}
+        ${match.awayTeam.ime}
+      </h3>
+
+      <p>${getMatchResultMessage(match)}</p>
+
+      <button id="nextMatchBtn" class="next-match-btn">
+        Sledeća utakmica
+      </button>
+    </section>
+  `;
+
+  document.querySelector("#nextMatchBtn").addEventListener("click", () => {
+    opponentIndex += 1;
+    startNextMatch();
+  });
+}
+
+function getMatchResultMessage(match) {
+  if (match.homeGoals > match.awayGoals) {
+    return `Pobednik je ${match.homeTeam.ime}. Idemo dalje!`;
+  }
+
+  if (match.awayGoals > match.homeGoals) {
+    return `Pobednik je ${match.awayTeam.ime}. Idemo dalje!`;
+  }
+
+  return "Utakmica je završena nerešeno. Idemo dalje!";
+}
+
+function renderEndOfTournament() {
+  app.innerHTML = `
+    <section class="match-finished-box">
+      <h2>Kraj serije utakmica</h2>
+      <p>${selectedTeam.ime} je odigrao sve utakmice.</p>
+
+      <button id="restartGameBtn" class="next-match-btn">
+        Pokreni ponovo
+      </button>
+    </section>
+  `;
+
+  document.querySelector("#restartGameBtn").addEventListener("click", startGame);
 }
 
 startGameBtn.addEventListener("click", startGame);
