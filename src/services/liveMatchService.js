@@ -8,6 +8,8 @@ export function createLiveMatch(homeTeam, awayTeam) {
     homeGoals: 0,
     awayGoals: 0,
     ballPosition: 50,
+    ballY: 50,
+    goalMessage: "",
     events: [],
     stats: {
       home: {
@@ -39,6 +41,8 @@ export function playMinute(match) {
   }
 
   match.minute += 1;
+  match.goalMessage = "";
+
   moveBall(match);
 
   const chance = Math.random();
@@ -65,11 +69,17 @@ export function playMinute(match) {
 }
 
 function moveBall(match) {
-  const movement = getRandomNumber(-15, 15);
-  match.ballPosition += movement;
+  const xMovement = getRandomNumber(-12, 12);
+  const yMovement = getRandomNumber(-18, 18);
+
+  match.ballPosition += xMovement;
+  match.ballY += yMovement;
 
   if (match.ballPosition < 5) match.ballPosition = 5;
   if (match.ballPosition > 95) match.ballPosition = 95;
+
+  if (match.ballY < 15) match.ballY = 15;
+  if (match.ballY > 85) match.ballY = 85;
 }
 
 function getRandomSide() {
@@ -85,6 +95,7 @@ function createAttack(match) {
   const team = getTeamBySide(match, side);
 
   match.ballPosition = side === "home" ? getRandomNumber(55, 80) : getRandomNumber(20, 45);
+  match.ballY = getRandomNumber(25, 75);
 
   addEvent(match, "attack", `${team.ime} kreće u napad`);
 }
@@ -105,16 +116,23 @@ function createShot(match) {
   if (isGoal && isOnTarget) {
     if (side === "home") {
       match.homeGoals += 1;
-      match.ballPosition = 95;
+      match.ballPosition = 96;
+      match.ballY = 50;
     } else {
       match.awayGoals += 1;
-      match.ballPosition = 5;
+      match.ballPosition = 4;
+      match.ballY = 50;
     }
 
-    addEvent(match, "goal", `GOOOL! ${team.ime} postiže gol`);
+    match.goalMessage = `GOOOL! ${team.ime} je postigao gol! Idemo dalje!`;
+    addEvent(match, "goal", match.goalMessage);
   } else if (isOnTarget) {
+    match.ballPosition = side === "home" ? 90 : 10;
+    match.ballY = getRandomNumber(35, 65);
     addEvent(match, "save", `${team.ime} šutira, golman brani`);
   } else {
+    match.ballPosition = side === "home" ? 92 : 8;
+    match.ballY = getRandomNumber(10, 90);
     addEvent(match, "miss", `${team.ime} šutira pored gola`);
   }
 }

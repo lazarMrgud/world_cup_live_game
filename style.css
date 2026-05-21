@@ -185,3 +185,36 @@ body {
   border-bottom: 1px solid #ddd;
   text-align: center;
 }
+
+.goal-message {
+  background: #b00000;
+  color: white;
+  font-size: 34px;
+  font-weight: 900;
+  text-align: center;
+  padding: 18px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  animation: goalPulse 0.7s ease-in-out infinite alternate;
+}
+
+@keyframes goalPulse {
+  from {
+    transform: scale(1);
+  }
+
+  to {
+    transform: scale(1.04);
+  }
+}
+
+.ball {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  font-size: 34px;
+  transition: left 0.8s ease-in-out, top 0.8s ease-in-out, transform 0.4s ease;
+}
+
+.ball-goal-animation {
+  transform: translate(-50%, -50%) scale(1.5) rotate(360deg);
+}

@@ -5,6 +5,8 @@ export function renderLiveMatch(match, selectedTeamId) {
 
   return `
     <section class="live-match ${selectedTeamIsPlaying ? "selected-team-match" : ""}">
+      ${match.goalMessage ? renderGoalMessage(match.goalMessage) : ""}
+
       <div class="scoreboard">
         <div class="live-team">
           <img src="${match.homeTeam.slika}" alt="${match.homeTeam.ime}">
@@ -29,7 +31,12 @@ export function renderLiveMatch(match, selectedTeamId) {
         <div class="center-line"></div>
         <div class="center-circle"></div>
 
-        <div class="ball" style="left: ${match.ballPosition}%">⚽</div>
+        <div 
+          class="ball ${match.goalMessage ? "ball-goal-animation" : ""}" 
+          style="left: ${match.ballPosition}%; top: ${match.ballY}%"
+        >
+          ⚽
+        </div>
 
         <div class="goal goal-right"></div>
       </div>
@@ -39,6 +46,14 @@ export function renderLiveMatch(match, selectedTeamId) {
         ${renderStats(match)}
       </div>
     </section>
+  `;
+}
+
+function renderGoalMessage(message) {
+  return `
+    <div class="goal-message">
+      ${message}
+    </div>
   `;
 }
 
